@@ -118,7 +118,7 @@ func (d *Datapath) processApplicationPacketsFromNFQ(p *nfqueue.NFPacket) {
 	appPacket, err := packet.New(packet.PacketTypeApplication, p.Buffer, strconv.Itoa(int(p.Mark)))
 
 	if err != nil {
-		appPacket.Print(packet.PacketFailureCreate)
+		zap.L().Error("Failed to create Packet", zap.Error(err))
 	} else if appPacket.IPProto == packet.IPProtocolTCP {
 		err = d.processApplicationTCPPackets(appPacket)
 	} else if appPacket.IPProto == packet.IPProtocolUDP {
