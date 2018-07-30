@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+
 	"go.aporeto.io/trireme-lib/common"
 	"go.aporeto.io/trireme-lib/controller/internal/enforcer/acls"
 	"go.aporeto.io/trireme-lib/controller/internal/enforcer/lookup"
@@ -33,9 +34,10 @@ type PUContext struct {
 	annotations       *policy.TagStore
 	txt               *policies
 	rcv               *policies
-	applicationACLs   *acls.ACLCache
+	ApplicationACLs   *acls.ACLCache
 	networkACLs       *acls.ACLCache
 	externalIPCache   cache.DataStore
+	DNSACLs           cache.DataStore
 	mark              string
 	ProxyPort         string
 	tcpPorts          []string
@@ -53,7 +55,6 @@ type PUContext struct {
 
 // NewPU creates a new PU context
 func NewPU(contextID string, puInfo *policy.PUInfo, timeout time.Duration) (*PUContext, error) {
-
 	pu := &PUContext{
 		id:              contextID,
 		managementID:    puInfo.Policy.ManagementID(),
@@ -61,8 +62,9 @@ func NewPU(contextID string, puInfo *policy.PUInfo, timeout time.Duration) (*PUC
 		identity:        puInfo.Policy.Identity(),
 		annotations:     puInfo.Policy.Annotations(),
 		externalIPCache: cache.NewCacheWithExpiration("External IP Cache", timeout),
-		applicationACLs: acls.NewACLCache(),
+		ApplicationACLs: acls.NewACLCache(),
 		networkACLs:     acls.NewACLCache(),
+		DNSACLs:         cache.NewCache("DNS Names Cache"),
 		mark:            puInfo.Runtime.Options().CgroupMark,
 		scopes:          puInfo.Policy.Scopes(),
 	}
@@ -75,7 +77,7 @@ func NewPU(contextID string, puInfo *policy.PUInfo, timeout time.Duration) (*PUC
 	pu.tcpPorts = strings.Split(tcpPorts, ",")
 	pu.udpPorts = strings.Split(udpPorts, ",")
 
-	if err := pu.applicationACLs.AddRuleList(puInfo.Policy.ApplicationACLs()); err != nil {
+	if err := pu.ApplicationACLs.AddRuleList(puInfo.Policy.ApplicationACLs()); err != nil {
 		return nil, err
 	}
 
@@ -83,8 +85,15 @@ func NewPU(contextID string, puInfo *policy.PUInfo, timeout time.Duration) (*PUC
 		return nil, err
 	}
 
-	return pu, nil
+	for _, dns := range puInfo.Policy.DNSNameACLs() {
+		fmt.Println("adding ", dns.Name, dns.Ports)
+		fmt.Println("adding to dns ", pu.DNSACLs.AddOrUpdate(dns.Name, dns.Ports))
+	}
 
+	fmt.Println("map contains")
+	pu.DNSACLs.List()
+
+	return pu, nil
 }
 
 // ID returns the ID of the PU
@@ -144,12 +153,12 @@ func (p *PUContext) NetworkACLPolicyFromAddr(addr net.IP, port uint16) (report *
 
 // ApplicationACLPolicy retrieves the policy based on ACLs
 func (p *PUContext) ApplicationACLPolicy(packet *packet.Packet) (report *policy.FlowPolicy, action *policy.FlowPolicy, err error) {
-	return p.applicationACLs.GetMatchingAction(packet.SourceAddress.To4(), packet.SourcePort)
+	return p.ApplicationACLs.GetMatchingAction(packet.SourceAddress.To4(), packet.SourcePort)
 }
 
 // ApplicationACLPolicyFromAddr retrieve the policy given an address and port.
 func (p *PUContext) ApplicationACLPolicyFromAddr(addr net.IP, port uint16) (report *policy.FlowPolicy, action *policy.FlowPolicy, err error) {
-	return p.applicationACLs.GetMatchingAction(addr, port)
+	return p.ApplicationACLs.GetMatchingAction(addr, port)
 }
 
 // CacheExternalFlowPolicy will cache an external flow

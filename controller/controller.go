@@ -93,6 +93,7 @@ func (t *trireme) Enforce(ctx context.Context, puID string, policy *policy.PUPol
 	lock, _ := t.locks.LoadOrStore(puID, &sync.Mutex{})
 	lock.(*sync.Mutex).Lock()
 	defer lock.(*sync.Mutex).Unlock()
+	fmt.Println("Enforce from controller")
 	return t.doHandleCreate(puID, policy, runtime)
 }
 
@@ -153,11 +154,14 @@ func (t *trireme) UpdateConfiguration(networks []string) error {
 // doHandleCreate is the detailed implementation of the create event.
 func (t *trireme) doHandleCreate(contextID string, policyInfo *policy.PUPolicy, runtimeInfo *policy.PURuntime) error {
 
+
 	containerInfo := policy.PUInfoFromPolicyAndRuntime(contextID, policyInfo, runtimeInfo)
 	newOptions := containerInfo.Runtime.Options()
 	newOptions.ProxyPort = t.port.Allocate()
 	containerInfo.Runtime.SetOptions(newOptions)
 
+	
+	
 	logEvent := &collector.ContainerRecord{
 		ContextID: contextID,
 		IPAddress: policyInfo.IPAddresses(),
@@ -175,6 +179,15 @@ func (t *trireme) doHandleCreate(contextID string, policyInfo *policy.PUPolicy, 
 		return nil
 	}
 
+	fmt.Println("dohandlecreate call enforce")
+
+	fmt.Println("dohandle create")
+
+	for _, dns := range containerInfo.Policy.DNSACLs {
+		fmt.Println("name", dns.Name)
+	}
+
+	
 	if err := t.enforcers[t.puTypeToEnforcerType[containerInfo.Runtime.PUType()]].Enforce(contextID, containerInfo); err != nil {
 		logEvent.Event = collector.ContainerFailed
 		return fmt.Errorf("unable to setup enforcer: %s", err)
@@ -245,6 +258,7 @@ func (t *trireme) doUpdatePolicy(contextID string, newPolicy *policy.PUPolicy, r
 					return lerr
 				}
 
+				fmt.Println("update policy")
 				if lerr := t.doHandleCreate(contextID, newPolicy, runtime); lerr != nil {
 					return err
 				}

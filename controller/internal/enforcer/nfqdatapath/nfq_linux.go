@@ -105,7 +105,6 @@ func (d *Datapath) processNetworkPacketsFromNFQ(p *nfqueue.NFPacket) {
 		buffer := make([]byte, len(netPacket.Buffer))
 		copyIndex := copy(buffer, netPacket.Buffer)
 		p.QueueHandle.SetVerdict2(uint32(p.QueueHandle.QueueNum), 1, uint32(p.Mark), uint32(copyIndex), uint32(p.ID), buffer)
-
 	}
 }
 

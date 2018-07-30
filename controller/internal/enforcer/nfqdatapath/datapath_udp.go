@@ -4,11 +4,13 @@ package nfqdatapath
 import (
 	"errors"
 	"fmt"
+	"github.com/google/gopacket/layers"
 	"net"
 	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
+	"go.aporeto.io/trireme-lib/policy"
 
 	"go.aporeto.io/trireme-lib/collector"
 	"go.aporeto.io/trireme-lib/controller/constants"
@@ -31,6 +33,12 @@ func (d *Datapath) ProcessNetworkUDPPacket(p *packet.Packet) (err error) {
 			zap.String("flow", p.L4FlowHash()),
 			zap.Error(err),
 		)
+	}
+
+	if p.SourcePort == 53 {
+		d.processDNSTraffic(p, false)
+		fmt.Println("Saw DNS response traffic. Letting it through")
+		return nil
 	}
 
 	var conn *connection.UDPConnection
@@ -249,18 +257,81 @@ func (d *Datapath) processNetUDPPacket(udpPacket *packet.Packet, context *pucont
 	return nil
 }
 
+type dnsl struct {
+}
+
+func (d *dnsl) SetTruncated() {
+
+}
+
+var dnsmap = map[uint16]*pucontext.PUContext{}
+
+func(d *Datapath) processDNSTraffic(p *packet.Packet, request bool) {
+	var dns layers.DNS
+	var dn dnsl
+
+	dns.DecodeFromBytes(p.GetUDPData(), &dn)
+
+	if request == true {
+		context, err := d.contextFromIP(true, p.SourceAddress.String(), p.Mark, p.SourcePort, packet.IPProtocolUDP)
+		if err != nil {
+			zap.L().Error("can not find context")
+		}
+
+		dnsmap[p.SourcePort] = context
+	} else {
+		context := dnsmap[p.DestinationPort]
+		if context == nil {
+			zap.L().Error("error")
+			return
+		}
+
+		fmt.Println(&context.DNSACLs)
+		
+		for _, t := range dns.Answers {
+			if t.DataLength == 4 {
+				fmt.Printf("looking for %s in %v\n", t.Name, context)
+				context.DNSACLs.List()
+				if val, err := context.DNSACLs.Get(fmt.Sprintf("%s", t.Name)); err == nil {
+					fmt.Printf("found %s", t.Name)
+					for _, port := range strings.Split(val.(string), ",") {
+						fmt.Println("MC: ", port)
+						if err = context.ApplicationACLs.AddRule(policy.IPRule{
+							Address:  fmt.Sprintf("%s", t.IP),
+							Port:     port,
+							Protocol: "TCP",
+							Policy: &policy.FlowPolicy{
+								Action:        policy.Accept,
+								ObserveAction: policy.ObserveNone,
+								ServiceID:     "default",
+								PolicyID:      "default",
+							},
+						}); err != nil {
+							fmt.Println("error insert rule ", err)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // ProcessApplicationUDPPacket processes packets arriving from an application and are destined to the network
 func (d *Datapath) ProcessApplicationUDPPacket(p *packet.Packet) (err error) {
 
-	if d.packetLogs {
-		zap.L().Debug("Processing application UDP packet ",
-			zap.String("flow", p.L4FlowHash()),
-		)
+	zap.L().Debug("Processing application UDP packet ",
+		zap.String("flow", p.L4FlowHash()),
+	)
 
-		defer zap.L().Debug("Finished Processing UDP application packet ",
-			zap.String("flow", p.L4FlowHash()),
-			zap.Error(err),
-		)
+	defer zap.L().Debug("Finished Processing UDP application packet ",
+		zap.String("flow", p.L4FlowHash()),
+		zap.Error(err),
+	)
+
+	if p.DestinationPort == 53 {
+		d.processDNSTraffic(p, true)
+		fmt.Println("DNS request. Letting it through")
+		return nil
 	}
 
 	var conn *connection.UDPConnection

@@ -24,6 +24,7 @@ type DataStore interface {
 	LockedModify(u interface{}, add func(a, b interface{}) interface{}, increment interface{}) (interface{}, error)
 	SetTimeOut(u interface{}, timeout time.Duration) (err error)
 	ToString() string
+	List() 
 }
 
 // Cache is the structure that involves the map of entries. The cache
@@ -155,6 +156,14 @@ func (c *Cache) Add(u interface{}, value interface{}) (err error) {
 	}
 
 	return errors.New("item exists: use update")
+}
+
+func (c *Cache) List() {
+	fmt.Println("print list of all map entries")
+
+	for k, v := range c.data {
+		fmt.Println(k.(string), v.value.(string))
+	}
 }
 
 // GetReset  changes the value of an entry into the cache and updates the timestamp

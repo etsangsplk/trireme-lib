@@ -263,7 +263,7 @@ func (p *Packet) UDPTokenAttach(udpdata []byte, udptoken []byte) {
 	udpData = append(udpData, udpdata...)
 	udpData = append(udpData, udptoken...)
 
-	p.udpData = udpData
+	p.UdpData = udpData
 
 	packetLenIncrease := uint16(len(udpdata) + len(udptoken))
 
@@ -271,7 +271,7 @@ func (p *Packet) UDPTokenAttach(udpdata []byte, udptoken []byte) {
 	p.FixupIPHdrOnDataModify(p.IPTotalLength, p.IPTotalLength+packetLenIncrease)
 
 	// Attach Data @ the end of current buffer
-	p.Buffer = append(p.Buffer, p.udpData...)
+	p.Buffer = append(p.Buffer, p.UdpData...)
 
 	p.UpdateUDPChecksum()
 }
@@ -281,11 +281,11 @@ func (p *Packet) UDPDataAttach(udpdata []byte) {
 
 	udpData := []byte{}
 	udpData = append(udpData, udpdata...)
-	p.udpData = udpData
+	p.UdpData = udpData
 	packetLenIncrease := uint16(len(udpdata))
 
 	// Attach Data @ the end of current buffer
-	p.Buffer = append(p.Buffer, p.udpData...)
+	p.Buffer = append(p.Buffer, p.UdpData...)
 	// IP Header Processing
 	p.FixupIPHdrOnDataModify(p.IPTotalLength, p.GetUDPDataStartBytes()+packetLenIncrease)
 	p.UpdateUDPChecksum()
@@ -296,7 +296,7 @@ func (p *Packet) UDPDataDetach() {
 
 	// Create constants for IP header + UDP header. copy ?
 	p.Buffer = p.Buffer[:UDPDataPos]
-	p.udpData = []byte{}
+	p.UdpData = []byte{}
 
 	// IP header/checksum updated on DataAttach.
 }

@@ -649,6 +649,7 @@ func (i *Instance) addUDPAppACLS(contextID, appChain, netChain string, rules pol
 
 			// tcp external services are auto discovered. No need for explicit rules.
 			if proto == udpProto {
+				var err error
 
 				switch rule.Policy.Action & (policy.Accept | policy.Reject) {
 				case policy.Accept:
@@ -664,13 +665,23 @@ func (i *Instance) addUDPAppACLS(contextID, appChain, netChain string, rules pol
 							return fmt.Errorf("unable to add acl rule for table %s, chain %s: %s", i.appPacketIPTableContext, appChain, err)
 						}
 					} else {
-						if err := i.ipt.Insert(
-							i.appPacketIPTableContext, appChain, 1,
-							"-p", rule.Protocol, "-m", "state", "--state", "NEW",
-							"-d", rule.Address,
-							"--dport", rule.Port,
-							"-j", "ACCEPT",
-						); err != nil {
+						if strings.Compare(rule.Port, "53") == 0 {
+							err = i.ipt.Insert(
+								i.appPacketIPTableContext, appChain, 1,
+								"-p", rule.Protocol, "-m", "state", "--state", "NEW",
+								"-d", rule.Address,
+								"--dport", rule.Port,
+								"-j", "NFQUEUE", "--queue-balance", i.fqc.GetApplicationQueueAckStr())
+						} else {
+							err = i.ipt.Insert(
+								i.appPacketIPTableContext, appChain, 1,
+								"-p", rule.Protocol, "-m", "state", "--state", "NEW",
+								"-d", rule.Address,
+								"--dport", rule.Port,
+								"-j", "ACCEPT")
+						}
+
+						if err != nil {
 							return fmt.Errorf("unable to add acl rule for table %s, chain %s: %s", i.appPacketIPTableContext, appChain, err)
 						}
 					}
@@ -692,13 +703,23 @@ func (i *Instance) addUDPAppACLS(contextID, appChain, netChain string, rules pol
 					}
 
 					// Add a corresponding rule on the top of the network chain.
-					if err := i.ipt.Insert(
-						i.netPacketIPTableContext, netChain, 1,
-						"-p", rule.Protocol,
-						"-s", rule.Address,
-						"--sport", rule.Port,
-						"-j", "ACCEPT",
-					); err != nil {
+					if strings.Compare(rule.Port, "53") == 0 {
+						err = i.ipt.Insert(
+							i.netPacketIPTableContext, netChain, 1,
+							"-p", rule.Protocol,
+							"-s", rule.Address,
+							"--sport", rule.Port,
+							"-j", "NFQUEUE", "--queue-balance", i.fqc.GetNetworkQueueSynAckStr())
+					} else {
+						err = i.ipt.Insert(
+							i.netPacketIPTableContext, netChain, 1,
+							"-p", rule.Protocol,
+							"-s", rule.Address,
+							"--sport", rule.Port,
+							"-j", "ACCEPT")
+					}
+
+					if err != nil {
 						return fmt.Errorf("unable to add acl rule for table %s, chain %s: %s", i.netPacketIPTableContext, netChain, err)
 					}
 

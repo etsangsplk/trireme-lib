@@ -69,6 +69,11 @@ func (e *enforcer) Run(ctx context.Context) error {
 // Enforce implements the enforce interface by sending the event to all the enforcers.
 func (e *enforcer) Enforce(contextID string, puInfo *policy.PUInfo) error {
 
+	fmt.Println("in enforce")
+	for _, dns := range puInfo.Policy.DNSACLs {
+		fmt.Println("trireme enforcer ", dns.Name)
+	}
+	
 	if e.transport != nil {
 		if err := e.transport.Enforce(contextID, puInfo); err != nil {
 			return fmt.Errorf("Failed to enforce in nfq: %s", err.Error())

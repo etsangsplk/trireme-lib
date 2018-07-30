@@ -111,7 +111,7 @@ func New(context uint64, bytes []byte, mark string) (packet *Packet, err error) 
 	} else {
 		// UDP Header Processing
 		p.UDPChecksum = binary.BigEndian.Uint16(bytes[UDPChecksumPos : UDPChecksumPos+2])
-		p.udpData = []byte{}
+		p.UdpData = []byte{}
 		p.SourcePort = binary.BigEndian.Uint16(bytes[tcpSourcePortPos : tcpSourcePortPos+2])
 		p.DestinationPort = binary.BigEndian.Uint16(bytes[tcpDestPortPos : tcpDestPortPos+2])
 	}
@@ -153,7 +153,7 @@ func (p *Packet) SetTCPData(b []byte) {
 
 // SetUDPData sets additional data in the packet
 func (p *Packet) SetUDPData(b []byte) {
-	p.udpData = b
+	p.UdpData = b
 }
 
 // GetTCPOptions returns any additional options in the packet

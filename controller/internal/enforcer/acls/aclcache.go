@@ -32,7 +32,12 @@ func NewACLCache() *ACLCache {
 
 // AddRule adds a single rule to the ACL Cache
 func (c *ACLCache) AddRule(rule policy.IPRule) (err error) {
-
+	defer func() {
+		c.reject.reverseSort()
+		c.accept.reverseSort()
+		c.observe.reverseSort()
+	}()
+	
 	if rule.Policy.ObserveAction.ObserveApply() {
 		return c.observe.addRule(rule)
 	}
@@ -61,7 +66,6 @@ func (c *ACLCache) AddRuleList(rules policy.IPRuleList) (err error) {
 
 // GetMatchingAction gets the matching action
 func (c *ACLCache) GetMatchingAction(ip []byte, port uint16) (report *policy.FlowPolicy, packet *policy.FlowPolicy, err error) {
-
 	report, packet, err = c.reject.getMatchingAction(ip, port, report)
 	if err == nil {
 		return

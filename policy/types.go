@@ -242,6 +242,25 @@ type IPRule struct {
 // IPRuleList is a list of IP rules
 type IPRuleList []IPRule
 
+// DNSRule holds the dns names and the assicated ports
+type DNSRule struct {
+	Name string
+	Ports string
+}
+
+// DNSRuleList is a list of DNS rules
+type DNSRuleList []DNSRule
+
+func (l DNSRuleList) Copy() DNSRuleList {
+	list := make(DNSRuleList, len(l))
+
+	for i, v := range l {
+		list[i] = v
+	}
+
+	return list
+}
+
 // Copy creates a clone of the IP rule list
 func (l IPRuleList) Copy() IPRuleList {
 	list := make(IPRuleList, len(l))
