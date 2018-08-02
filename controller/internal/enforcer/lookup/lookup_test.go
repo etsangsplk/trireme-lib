@@ -11,18 +11,18 @@ import (
 var (
 	appEqWeb = policy.KeyValueOperator{
 		Key:      "app",
-		Value:    []string{"web"},
+		Value:    "web",
 		Operator: policy.Equal,
 	}
 	envEqDemo = policy.KeyValueOperator{
 		Key:      "env",
-		Value:    []string{"demo"},
+		Value:    "demo",
 		Operator: policy.Equal,
 	}
 
 	envEqDemoOrQa = policy.KeyValueOperator{
 		Key:      "env",
-		Value:    []string{"demo", "qa"},
+		Value:    "demo-qa",
 		Operator: policy.Equal,
 	}
 
@@ -33,13 +33,13 @@ var (
 
 	langNotJava = policy.KeyValueOperator{
 		Key:      "lang",
-		Value:    []string{"java"},
+		Value:    "java",
 		Operator: policy.NotEqual,
 	}
 
 	envNotDemoOrQA = policy.KeyValueOperator{
 		Key:      "env",
-		Value:    []string{"demo", "qa"},
+		Value:    "demo-qa",
 		Operator: policy.NotEqual,
 	}
 
@@ -50,19 +50,19 @@ var (
 
 	vulnerKey = policy.KeyValueOperator{
 		Key:      "vulnerability",
-		Value:    []string{"high"},
+		Value:    "high",
 		Operator: policy.Equal,
 	}
 
 	vulnerLowKey = policy.KeyValueOperator{
 		Key:      "vulnerability",
-		Value:    []string{"low"},
+		Value:    "low",
 		Operator: policy.Equal,
 	}
 
 	namespaceKey = policy.KeyValueOperator{
 		Key:      "namespace",
-		Value:    []string{"/a/b/*"},
+		Value:    "/a/b/*",
 		Operator: policy.Equal,
 	}
 
@@ -108,13 +108,13 @@ var (
 
 	domainParent = policy.KeyValueOperator{
 		Key:      "domain",
-		Value:    []string{"com.example.*", "com.*", "com.longexample.*", "com.ex.*"},
+		Value:    "com.example.*",
 		Operator: policy.Equal,
 	}
 
 	domainFull = policy.KeyValueOperator{
 		Key:      "domain",
-		Value:    []string{"com.example.web"},
+		Value:    "com.example.web",
 		Operator: policy.Equal,
 	}
 
@@ -158,8 +158,8 @@ func TestFuncAddPolicy(t *testing.T) {
 			So(policyDB.numberOfPolicies, ShouldEqual, 1)
 			So(index, ShouldEqual, 1)
 			for _, c := range appEqWebAndenvEqDemo.Clause {
-				So(policyDB.equalMapTable[c.Key][c.Value[0]], ShouldNotBeNil)
-				So(policyDB.equalMapTable[c.Key][c.Value[0]][0].index, ShouldEqual, index)
+				So(policyDB.equalMapTable[c.Key][c.Value], ShouldNotBeNil)
+				So(policyDB.equalMapTable[c.Key][c.Value][0].index, ShouldEqual, index)
 				So(policyDB.equalPrefixes[c.Key], ShouldNotContain, c.Key)
 			}
 		})
@@ -170,8 +170,8 @@ func TestFuncAddPolicy(t *testing.T) {
 			So(policyDB.numberOfPolicies, ShouldEqual, 1)
 			So(index, ShouldEqual, 1)
 			for _, c := range policylangNotJava.Clause {
-				So(policyDB.notEqualMapTable[c.Key][c.Value[0]], ShouldNotBeNil)
-				So(policyDB.notEqualMapTable[c.Key][c.Value[0]][0].index, ShouldEqual, index)
+				So(policyDB.notEqualMapTable[c.Key][c.Value], ShouldNotBeNil)
+				So(policyDB.notEqualMapTable[c.Key][c.Value][0].index, ShouldEqual, index)
 				So(policyDB.equalPrefixes, ShouldNotContainKey, c.Key)
 			}
 		})
@@ -193,22 +193,13 @@ func TestFuncAddPolicy(t *testing.T) {
 			index := policyDB.AddPolicy(policyDomainParent)
 
 			key := policyDomainParent.Clause[0].Key
-			value0 := policyDomainParent.Clause[0].Value[0]
-			value1 := policyDomainParent.Clause[0].Value[1]
-			value2 := policyDomainParent.Clause[0].Value[2]
-			value3 := policyDomainParent.Clause[0].Value[3]
+			value0 := policyDomainParent.Clause[0].Value
 			So(policyDB.numberOfPolicies, ShouldEqual, 1)
 			So(index, ShouldEqual, 1)
 			So(policyDB.equalMapTable[key], ShouldHaveLength, 4)
 			So(policyDB.equalMapTable[key], ShouldContainKey, value0[:len(value0)-1])
-			So(policyDB.equalMapTable[key], ShouldContainKey, value1[:len(value1)-1])
-			So(policyDB.equalMapTable[key], ShouldContainKey, value2[:len(value2)-1])
-			So(policyDB.equalMapTable[key], ShouldContainKey, value3[:len(value3)-1])
 			So(policyDB.equalPrefixes[key], ShouldHaveLength, 4)
 			So(policyDB.equalPrefixes[key], ShouldContain, len(value0)-1)
-			So(policyDB.equalPrefixes[key], ShouldContain, len(value1)-1)
-			So(policyDB.equalPrefixes[key], ShouldContain, len(value2)-1)
-			So(policyDB.equalPrefixes[key], ShouldContain, len(value3)-1)
 		})
 
 	})

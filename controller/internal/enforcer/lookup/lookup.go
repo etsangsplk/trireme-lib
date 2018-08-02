@@ -26,7 +26,9 @@ type PolicyDB struct {
 	numberOfPolicies       int
 	equalPrefixes          map[string]intList
 	equalMapTable          map[string]map[string][]*ForwardingPolicy
+	equalIDTable           map[string][]*ForwardingPolicy
 	notEqualMapTable       map[string]map[string][]*ForwardingPolicy
+	notEqualIDTable        map[string][]*ForwardingPolicy
 	notStarTable           map[string][]*ForwardingPolicy
 	defaultNotExistsPolicy *ForwardingPolicy
 }
@@ -36,9 +38,11 @@ func NewPolicyDB() (m *PolicyDB) {
 
 	m = &PolicyDB{
 		numberOfPolicies:       0,
-		equalMapTable:          map[string]map[string][]*ForwardingPolicy{},
 		equalPrefixes:          map[string]intList{},
+		equalMapTable:          map[string]map[string][]*ForwardingPolicy{},
+		equalIDTable:           map[string][]*ForwardingPolicy{},
 		notEqualMapTable:       map[string]map[string][]*ForwardingPolicy{},
+		notEqualIDTable:        map[string][]*ForwardingPolicy{},
 		notStarTable:           map[string][]*ForwardingPolicy{},
 		defaultNotExistsPolicy: nil,
 	}

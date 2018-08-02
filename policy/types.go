@@ -254,7 +254,7 @@ func (l IPRuleList) Copy() IPRuleList {
 // KeyValueOperator describes an individual matching rule
 type KeyValueOperator struct {
 	Key      string
-	Value    []string
+	Value    string
 	Operator Operator
 }
 

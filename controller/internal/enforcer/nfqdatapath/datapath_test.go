@@ -259,7 +259,7 @@ func setupProcessingUnitsInDatapathAndEnforce(collectors *mockcollector.MockEven
 			Clause: []policy.KeyValueOperator{
 				{
 					Key:      enforcerconstants.TransmitterLabel,
-					Value:    []string{"value"},
+					Value:    "value",
 					Operator: policy.Equal,
 				},
 			},
@@ -332,7 +332,7 @@ func setupProcessingUnitsInDatapathAndEnforce(collectors *mockcollector.MockEven
 		Clause: []policy.KeyValueOperator{
 			{
 				Key:      enforcerconstants.TransmitterLabel,
-				Value:    []string{"value"},
+				Value:    "value",
 				Operator: policy.Equal,
 			},
 		},
@@ -4288,7 +4288,7 @@ func TestPacketsWithInvalidTags(t *testing.T) {
 				Clause: []policy.KeyValueOperator{
 					{
 						Key:      enforcerconstants.TransmitterLabel,
-						Value:    []string{"non-value"},
+						Value:    "non-value",
 						Operator: policy.Equal,
 					},
 				},
@@ -4649,7 +4649,7 @@ func TestForPacketsWithRandomFlags(t *testing.T) {
 							Clause: []policy.KeyValueOperator{
 								{
 									Key:      enforcerconstants.TransmitterLabel,
-									Value:    []string{"value"},
+									Value:    "value",
 									Operator: policy.Equal,
 								},
 							},
@@ -4710,7 +4710,7 @@ func TestForPacketsWithRandomFlags(t *testing.T) {
 							Clause: []policy.KeyValueOperator{
 								{
 									Key:      enforcerconstants.TransmitterLabel,
-									Value:    []string{"value"},
+									Value:    "value",
 									Operator: policy.Equal,
 								},
 							},

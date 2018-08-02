@@ -49,7 +49,7 @@ func TestNewPolicy(t *testing.T) {
 
 			clause := KeyValueOperator{
 				Key:      "app",
-				Value:    []string{"web"},
+				Value:    "web",
 				Operator: Equal,
 			}
 
@@ -154,7 +154,7 @@ func TestFuncClone(t *testing.T) {
 
 		clause := KeyValueOperator{
 			Key:      "app",
-			Value:    []string{"web"},
+			Value:    "web",
 			Operator: Equal,
 		}
 
@@ -241,7 +241,7 @@ func TestAllLockedSetGet(t *testing.T) {
 
 		clause := KeyValueOperator{
 			Key:      "app",
-			Value:    []string{"web"},
+			Value:    "web",
 			Operator: Equal,
 		}
 
@@ -360,7 +360,7 @@ func TestAllLockedSetGet(t *testing.T) {
 
 		newclause := KeyValueOperator{
 			Key:      "app",
-			Value:    []string{"added"},
+			Value:    "added",
 			Operator: Equal,
 		}
 
