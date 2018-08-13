@@ -59,6 +59,12 @@ const (
 
 	// EnvLogID store the context Id for the log file to be used.
 	EnvLogID = "TRIREME_ENV_LOG_ID"
+
+	// EnvCompressedTags stores whether we should be using compressed tags.
+	EnvCompressedTags = "TRIREME_ENV_COMPRESSED_TAGS"
+
+	// EnvCompressedTagsEnable specifies value to enable compressed tags.
+	EnvCompressedTagsEnable = "1"
 )
 
 // ModeType defines the mode of the enforcement and supervisor.
@@ -70,4 +76,6 @@ const (
 	RemoteContainer ModeType = iota
 	// LocalServer indicates that the Supervisor applies to Linux processes
 	LocalServer
+	// Sidecar indicates the controller to be in sidecar mode
+	Sidecar
 )

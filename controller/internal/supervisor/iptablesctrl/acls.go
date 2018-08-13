@@ -65,7 +65,7 @@ func (i *Instance) cgroupChainRules(appChain string, netChain string, mark strin
 
 	}
 
-	return append(rules, i.proxyRules(appChain, netChain, tcpPorts, proxyPort, proxyPortSetName)...)
+	return append(rules, i.proxyRules(appChain, netChain, tcpPorts, proxyPort, proxyPortSetName, mark)...)
 }
 
 func (i *Instance) uidChainRules(portSetName, appChain string, netChain string, mark string, port string, uid string, proxyPort string, proyPortSetName string) [][]string {
@@ -121,13 +121,13 @@ func (i *Instance) chainRules(appChain string, netChain string, port string, pro
 		},
 	}
 
-	return append(rules, i.proxyRules(appChain, netChain, port, proxyPort, proxyPortSetName)...)
+	return append(rules, i.proxyRules(appChain, netChain, port, proxyPort, proxyPortSetName, "")...)
 }
 
 // proxyRules creates all the proxy specific rules.
-func (i *Instance) proxyRules(appChain string, netChain string, port string, proxyPort string, proxyPortSetName string) [][]string {
+func (i *Instance) proxyRules(appChain string, netChain string, port string, proxyPort string, proxyPortSetName string, cgroupMark string) [][]string {
 	destSetName, srcSetName, srvSetName := i.getSetNames(proxyPortSetName)
-	return [][]string{
+	proxyrules := [][]string{
 		{
 			i.appProxyIPTableContext,
 			natProxyInputChain,
@@ -145,17 +145,6 @@ func (i *Instance) proxyRules(appChain string, netChain string, port string, pro
 			"-p", "tcp",
 			"-m", "set",
 			"--match-set", srvSetName, "dst",
-			"-m", "mark", "!",
-			"--mark", proxyMark,
-			"-j", "REDIRECT",
-			"--to-port", proxyPort,
-		},
-		{
-			i.appProxyIPTableContext,
-			natProxyOutputChain,
-			"-p", "tcp",
-			"-m", "set",
-			"--match-set", destSetName, "dst,dst",
 			"-m", "mark", "!",
 			"--mark", proxyMark,
 			"-j", "REDIRECT",
@@ -234,12 +223,48 @@ func (i *Instance) proxyRules(appChain string, netChain string, port string, pro
 			"-j", "ACCEPT",
 		},
 	}
+
+	if cgroupMark == "" {
+		proxyrules = append(proxyrules, []string{
+			i.appProxyIPTableContext,
+			natProxyOutputChain,
+			"-p", "tcp",
+			"-m", "set", "--match-set", destSetName, "dst,dst",
+			"-m", "mark", "!", "--mark", proxyMark,
+			"-j", "REDIRECT",
+			"--to-port", proxyPort,
+		})
+	} else {
+		proxyrules = append(proxyrules, []string{
+			i.appProxyIPTableContext,
+			natProxyOutputChain,
+			"-p", "tcp",
+			"-m", "set", "--match-set", destSetName, "dst,dst",
+			"-m", "mark", "!", "--mark", proxyMark,
+			"-m", "cgroup", "--cgroup", cgroupMark,
+			"-j", "REDIRECT",
+			"--to-port", proxyPort,
+		})
+	}
+
+	return proxyrules
 }
 
 //trapRules provides the packet trap rules to add/delete
 func (i *Instance) trapRules(appChain string, netChain string) [][]string {
 
 	rules := [][]string{}
+
+	// If enforcer is in sidecar mode. we need to add an exclusive dns rule
+	// to accept the dns traffic. This is required for the enforcer to talk to
+	// to the backend services.
+	if i.mode == constants.Sidecar {
+		rules = append(rules, []string{
+			i.appPacketIPTableContext, appChain,
+			"-p", "udp", "--dport", "53",
+			"-j", "ACCEPT",
+		})
+	}
 
 	// Application Packets - SYN
 	rules = append(rules, []string{
@@ -270,6 +295,17 @@ func (i *Instance) trapRules(appChain string, netChain string) [][]string {
 		"-p", "udp",
 		"-j", "NFQUEUE", "--queue-balance", i.fqc.GetApplicationQueueAckStr(),
 	})
+
+	// If enforcer is in sidecar mode. we need to add an exclusive dns rule
+	// to accept the dns traffic. This is required for the enforcer to talk to
+	// to the backend services.
+	if i.mode == constants.Sidecar {
+		rules = append(rules, []string{
+			i.netPacketIPTableContext, netChain,
+			"-p", "udp", "--sport", "53",
+			"-j", "ACCEPT",
+		})
+	}
 
 	// Network Packets - SYN
 	rules = append(rules, []string{
@@ -1383,10 +1419,9 @@ func (i *Instance) setGlobalRules(appChain, netChain string) error {
 		"-m", "set", "--match-set", targetNetworkSet, "dst",
 		"-p", "udp",
 		"-m", "string", "--algo", "bm", "--string", packet.UDPAuthMarker,
-		"-m", "u32", "--u32", "0x19&0x60=0x40",
 		"-j", "NFQUEUE", "--queue-bypass", "--queue-balance", i.fqc.GetNetworkQueueSynAckStr())
 	if err != nil {
-		return fmt.Errorf("unable to add capture synack rule for table %s, chain %sr: %s", i.appPacketIPTableContext, i.appPacketIPTableSection, err)
+		return fmt.Errorf("unable to add capture udp handshake rule for table %s, chain %sr: %s", i.appPacketIPTableContext, i.appPacketIPTableSection, err)
 	}
 
 	err = i.ipt.Insert(
