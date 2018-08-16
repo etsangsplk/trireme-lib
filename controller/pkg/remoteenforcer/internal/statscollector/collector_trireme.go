@@ -7,7 +7,6 @@ import (
 
 // CollectFlowEvent collects a new flow event and adds it to a local list it shares with SendStats
 func (c *collectorImpl) CollectFlowEvent(record *collector.FlowRecord) {
-
 	hash := collector.StatsFlowHash(record)
 
 	// If flow event doesn't have a count make it equal to 1. At least one flow is collected
@@ -19,6 +18,7 @@ func (c *collectorImpl) CollectFlowEvent(record *collector.FlowRecord) {
 	defer c.Unlock()
 
 	if r, ok := c.Flows[hash]; ok {
+		r.Latency = (float64(r.Count)*r.Latency + record.Latency) / float64(r.Count+record.Count)
 		r.Count = r.Count + record.Count
 		return
 	}

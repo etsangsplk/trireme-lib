@@ -149,6 +149,10 @@ type TCPConnection struct {
 
 	// PacketFlowPolicy holds the last matched actual policy
 	PacketFlowPolicy *policy.FlowPolicy
+
+	// StartTime holds the time that the negotiation was started. It is
+	// used for latency calculations
+	StartTime time.Time
 }
 
 // TCPConnectionExpirationNotifier handles processing the expiration of an element

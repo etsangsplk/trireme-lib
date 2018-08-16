@@ -126,6 +126,7 @@ type FlowRecord struct {
 	Action           policy.ActionType
 	ObservedAction   policy.ActionType
 	L4Protocol       uint8
+	Latency          float64
 }
 
 func (f *FlowRecord) String() string {

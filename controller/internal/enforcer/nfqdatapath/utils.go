@@ -8,18 +8,18 @@ import (
 	"go.aporeto.io/trireme-lib/policy"
 )
 
-func (d *Datapath) reportAcceptedFlow(p *packet.Packet, conn *connection.TCPConnection, sourceID string, destID string, context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
+func (d *Datapath) reportAcceptedFlow(p *packet.Packet, conn *connection.TCPConnection, sourceID string, destID string, context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy, latency float64) {
 	if conn != nil {
 		conn.SetReported(connection.AcceptReported)
 	}
-	d.reportFlow(p, sourceID, destID, context, "", report, packet)
+	d.reportFlow(p, sourceID, destID, context, "", report, packet, latency)
 }
 
 func (d *Datapath) reportUDPAcceptedFlow(p *packet.Packet, conn *connection.UDPConnection, sourceID string, destID string, context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
 	if conn != nil {
 		conn.SetReported(connection.AcceptReported)
 	}
-	d.reportFlow(p, sourceID, destID, context, "", report, packet)
+	d.reportFlow(p, sourceID, destID, context, "", report, packet, 0.0)
 }
 
 func (d *Datapath) reportRejectedFlow(p *packet.Packet, conn *connection.TCPConnection, sourceID string, destID string, context *pucontext.PUContext, mode string, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
@@ -36,7 +36,7 @@ func (d *Datapath) reportRejectedFlow(p *packet.Packet, conn *connection.TCPConn
 	if packet == nil {
 		packet = report
 	}
-	d.reportFlow(p, sourceID, destID, context, mode, report, packet)
+	d.reportFlow(p, sourceID, destID, context, mode, report, packet, 0.0)
 }
 
 func (d *Datapath) reportUDPRejectedFlow(p *packet.Packet, conn *connection.UDPConnection, sourceID string, destID string, context *pucontext.PUContext, mode string, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
@@ -53,7 +53,7 @@ func (d *Datapath) reportUDPRejectedFlow(p *packet.Packet, conn *connection.UDPC
 	if packet == nil {
 		packet = report
 	}
-	d.reportFlow(p, sourceID, destID, context, mode, report, packet)
+	d.reportFlow(p, sourceID, destID, context, mode, report, packet, 0.0)
 }
 
 func (d *Datapath) reportExternalServiceFlowCommon(context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy, app bool, p *packet.Packet, src, dst *collector.EndPoint) {

@@ -399,9 +399,9 @@ func (p *Proxy) StartServerAuthStateMachine(ip fmt.Stringer, backendport int, up
 		p.reportRejectedFlow(flowProperties, conn, collector.DefaultEndPoint, puContext.ManagementID(), puContext, collector.PolicyDrop, networkReport, networkPolicy)
 		return false, fmt.Errorf("Unauthorized")
 	}
-
 	defer upConn.SetDeadline(time.Time{}) // nolint errcheck
 
+	var start time.Time
 	for {
 		if err := upConn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 			return false, err
@@ -409,6 +409,7 @@ func (p *Proxy) StartServerAuthStateMachine(ip fmt.Stringer, backendport int, up
 
 		switch conn.GetState() {
 		case connection.ServerReceivePeerToken:
+			start = time.Now()
 			if err := upConn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
 				return false, err
 			}
@@ -463,13 +464,13 @@ func (p *Proxy) StartServerAuthStateMachine(ip fmt.Stringer, backendport int, up
 				p.reportRejectedFlow(flowProperties, conn, collector.DefaultEndPoint, puContext.ManagementID(), puContext, collector.InvalidFormat, nil, nil)
 				return isEncrypted, fmt.Errorf("ack packet dropped because signature validation failed %s", err)
 			}
-			p.reportAcceptedFlow(flowProperties, conn, conn.Auth.RemoteContextID, puContext.ManagementID(), puContext, conn.ReportFlowPolicy, conn.PacketFlowPolicy)
+			p.reportAcceptedFlow(flowProperties, conn, conn.Auth.RemoteContextID, puContext.ManagementID(), puContext, conn.ReportFlowPolicy, conn.PacketFlowPolicy, time.Since(start).Seconds())
 			return isEncrypted, nil
 		}
 	}
 }
 
-func (p *Proxy) reportFlow(flowproperties *proxyFlowProperties, conn *connection.ProxyConnection, sourceID string, destID string, context *pucontext.PUContext, mode string, reportAction *policy.FlowPolicy, packetAction *policy.FlowPolicy) {
+func (p *Proxy) reportFlow(flowproperties *proxyFlowProperties, conn *connection.ProxyConnection, sourceID string, destID string, context *pucontext.PUContext, mode string, reportAction *policy.FlowPolicy, packetAction *policy.FlowPolicy, latency float64) {
 	c := &collector.FlowRecord{
 		ContextID: context.ID(),
 		Source: &collector.EndPoint{
@@ -491,6 +492,7 @@ func (p *Proxy) reportFlow(flowproperties *proxyFlowProperties, conn *connection
 		L4Protocol:  packet.IPProtocolTCP,
 		ServiceType: policy.ServiceTCP,
 		ServiceID:   flowproperties.ServiceID,
+		Latency:     latency,
 	}
 
 	if reportAction.ObserveAction.Observed() {
@@ -501,9 +503,9 @@ func (p *Proxy) reportFlow(flowproperties *proxyFlowProperties, conn *connection
 	p.collector.CollectFlowEvent(c)
 }
 
-func (p *Proxy) reportAcceptedFlow(flowproperties *proxyFlowProperties, conn *connection.ProxyConnection, sourceID string, destID string, context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
+func (p *Proxy) reportAcceptedFlow(flowproperties *proxyFlowProperties, conn *connection.ProxyConnection, sourceID string, destID string, context *pucontext.PUContext, report *policy.FlowPolicy, packet *policy.FlowPolicy, latency float64) {
 
-	p.reportFlow(flowproperties, conn, sourceID, destID, context, "N/A", report, packet)
+	p.reportFlow(flowproperties, conn, sourceID, destID, context, "N/A", report, packet, latency)
 }
 
 func (p *Proxy) reportRejectedFlow(flowproperties *proxyFlowProperties, conn *connection.ProxyConnection, sourceID string, destID string, context *pucontext.PUContext, mode string, report *policy.FlowPolicy, packet *policy.FlowPolicy) {
@@ -517,7 +519,7 @@ func (p *Proxy) reportRejectedFlow(flowproperties *proxyFlowProperties, conn *co
 	if packet == nil {
 		packet = report
 	}
-	p.reportFlow(flowproperties, conn, sourceID, destID, context, mode, report, packet)
+	p.reportFlow(flowproperties, conn, sourceID, destID, context, mode, report, packet, 0.0)
 }
 
 func readMsg(reader io.Reader) ([]byte, error) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -306,6 +307,10 @@ func (d *Datapath) processApplicationSynPacket(tcpPacket *packet.Packet, context
 
 // processApplicationSynAckPacket processes an application SynAck packet
 func (d *Datapath) processApplicationSynAckPacket(tcpPacket *packet.Packet, context *pucontext.PUContext, conn *connection.TCPConnection) (interface{}, error) {
+
+	// Store the star time of the packet connection so that we can calculate the latency until the
+	// Ack packet arrives. This will give us a good estimate of the round trip times.
+	conn.StartTime = time.Now()
 
 	// If we are already in the connection.TCPData, it means that this is an external flow
 	// At this point we can release the flow to the kernel by updating conntrack
@@ -753,7 +758,7 @@ func (d *Datapath) processNetworkAckPacket(context *pucontext.PUContext, conn *c
 			d.reportRejectedFlow(tcpPacket, conn, conn.Auth.RemoteContextID, context.ManagementID(), context, collector.PolicyDrop, conn.ReportFlowPolicy, conn.PacketFlowPolicy)
 		} else {
 			// We accept the packet as a new flow
-			d.reportAcceptedFlow(tcpPacket, conn, conn.Auth.RemoteContextID, context.ManagementID(), context, conn.ReportFlowPolicy, conn.PacketFlowPolicy)
+			d.reportAcceptedFlow(tcpPacket, conn, conn.Auth.RemoteContextID, context.ManagementID(), context, conn.ReportFlowPolicy, conn.PacketFlowPolicy, time.Since(conn.StartTime).Seconds())
 		}
 
 		conn.SetState(connection.TCPData)

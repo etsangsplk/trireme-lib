@@ -372,11 +372,16 @@ func (p *Config) processAppRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Add the headers with the authorization parameters and public key. The other side
 	// must validate our public key.
-	r.Header.Add("X-APORETO-KEY", string(p.secrets.TransmittedKey()))
-	r.Header.Add("X-APORETO-AUTH", token)
+	if !apiCache.External {
+		r.Header.Add("X-APORETO-KEY", string(p.secrets.TransmittedKey()))
+		r.Header.Add("X-APORETO-AUTH", token)
+	}
 
+	start := time.Now()
 	// Forward the request.
 	p.fwdTLS.ServeHTTP(w, r)
+	record.Latency = float64(time.Since(start).Seconds())
+
 }
 
 func (p *Config) processNetRequest(w http.ResponseWriter, r *http.Request) {
@@ -527,7 +532,9 @@ func (p *Config) processNetRequest(w http.ResponseWriter, r *http.Request) {
 	record.Action = policy.Accept | policy.Encrypt
 	record.Destination.IP = originalDestination.IP.String()
 	record.Destination.Port = uint16(originalDestination.Port)
+	start := time.Now()
 	p.fwd.ServeHTTP(w, r)
+	record.Latency = float64(time.Since(start).Seconds())
 	zap.L().Debug("Forwarding Request", zap.String("URI", r.RequestURI), zap.String("Host", r.Host))
 }
 
