@@ -532,7 +532,10 @@ func (p *Config) processNetRequest(w http.ResponseWriter, r *http.Request) {
 	record.Action = policy.Accept | policy.Encrypt
 	record.Destination.IP = originalDestination.IP.String()
 	record.Destination.Port = uint16(originalDestination.Port)
+<<<<<<< HEAD
 	start := time.Now()
+=======
+>>>>>>> 1c7b52c1e2fa2eb0c798ea77fee86c6be3fff844
 	p.fwd.ServeHTTP(w, r)
 	record.Latency = float64(time.Since(start).Seconds())
 	zap.L().Debug("Forwarding Request", zap.String("URI", r.RequestURI), zap.String("Host", r.Host))
