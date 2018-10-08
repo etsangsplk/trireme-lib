@@ -80,6 +80,22 @@ func (i *Instance) createProxySets(portSetName string) error {
 		return fmt.Errorf("unable to create ipset for %s: %s", srvSetName, err)
 	}
 
+	_, err = i.ipset.NewIpset(destSetName+"ipv6", "hash:ip,port", &ipset.Params{})
+	if err != nil {
+		return fmt.Errorf("unable to create ipset for %s: %s", destSetName, err)
+	}
+
+	_, err = i.ipset.NewIpset(srcSetName+"ipv6", "hash:ip,port", &ipset.Params{})
+	if err != nil {
+		return fmt.Errorf("unable to create ipset for %s: %s", srcSetName, err)
+	}
+
+	err = i.createPUPortSet(srvSetName + "ipv6")
+	// _, err = i.ipset.NewIpset(srvSetName, "bitmap:port", &ipset.Params{})
+	if err != nil {
+		return fmt.Errorf("unable to create ipset for %s: %s", srvSetName, err)
+	}
+
 	return nil
 }
 

@@ -45,8 +45,11 @@ const (
 type Instance struct {
 	fqc                     *fqconfig.FilterQueue
 	ipt                     provider.IptablesProvider
+	ipt6                    provider.IptablesProvider
 	ipset                   provider.IpsetProvider
+	ipset6                  provider.IpsetProvider
 	targetSet               provider.Ipset
+	targetSet6              provider.Ipset
 	appPacketIPTableContext string
 	appProxyIPTableContext  string
 	appPacketIPTableSection string
@@ -66,15 +69,27 @@ func NewInstance(fqc *fqconfig.FilterQueue, mode constants.ModeType, portset por
 		return nil, fmt.Errorf("unable to initialize iptables provider: %s", err)
 	}
 
+	ipt6, err := provider.NewGoIP6TablesProvider([]string{"mangle"})
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize iptables provider for ipv6 %s", err)
+	}
+
 	ips := provider.NewGoIPsetProvider()
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize ipsets: %s", err)
 	}
 
+	ips6 := provider.NewGoIPsetProvider()
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize ipsets: %s", err)
+	}
+
 	i := &Instance{
-		fqc:   fqc,
-		ipt:   ipt,
-		ipset: ips,
+		fqc:                     fqc,
+		ipt:                     ipt,
+		ipt6:                    ipt6,
+		ipset:                   ips,
+		ipset6:                  ips6,
 		appPacketIPTableContext: "mangle",
 		netPacketIPTableContext: "mangle",
 		appProxyIPTableContext:  "nat",

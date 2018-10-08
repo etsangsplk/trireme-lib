@@ -74,6 +74,25 @@ func NewGoIPTablesProvider(batchTables []string) (*BatchProvider, error) {
 	}, nil
 }
 
+// NewGoIP6TablesProvider returns an IptablesProvider for ipv6 tables handle provided by go-iptables package
+func NewGoIP6TablesProvider(batchTables []string) (*BatchProvider, error) {
+	ipt, err := iptables.NewWithProtocol(iptables.ProtocolIPv6)
+	if err != nil {
+		return nil, err
+	}
+	batchTablesMap := map[string]bool{}
+	if restoreHasWait() {
+		for _, t := range batchTables {
+			batchTablesMap[t] = true
+		}
+	}
+	return &BatchProvider{
+		ipt:         ipt,
+		rules:       map[string]map[string][]string{},
+		batchTables: batchTablesMap,
+	}, nil
+}
+
 // Append will append the provided rule to the local cache or call
 // directly the iptables command depending on the table.
 func (b *BatchProvider) Append(table, chain string, rulespec ...string) error {
