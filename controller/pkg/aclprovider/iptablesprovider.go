@@ -46,7 +46,8 @@ type BatchProvider struct {
 }
 
 const (
-	restoreCmd = "iptables-restore"
+	restoreCmd  = "iptables-restore"
+	restoreCmd6 = "ip6tables-restore"
 )
 
 // NewGoIPTablesProvider returns an IptablesProvider interface based on the go-iptables
