@@ -37,6 +37,7 @@ type config struct {
 	linuxProcess           bool
 	mutualAuth             bool
 	packetLogs             bool
+	ipv6                   bool
 	validity               time.Duration
 	procMountPoint         string
 	externalIPcacheTimeout time.Duration
@@ -47,6 +48,13 @@ type config struct {
 
 // Option is provided using functional arguments.
 type Option func(*config)
+
+// OptionIPv6 is an option to provide ipv6 enable option
+func OptionIPv6(ipv6 bool) Option {
+	return func(cfg *config) {
+		cfg.ipv6 = ipv6
+	}
+}
 
 // OptionCollector is an option to provide an external collector implementation.
 func OptionCollector(c collector.EventCollector) Option {
@@ -202,6 +210,7 @@ func (t *trireme) newSupervisors() error {
 			constants.LocalServer,
 			t.config.targetNetworks,
 			t.config.service,
+			t.config.ipv6,
 		)
 		if err != nil {
 			return fmt.Errorf("Could Not create process supervisor :: received error %v", err)
@@ -214,6 +223,7 @@ func (t *trireme) newSupervisors() error {
 			t.config.collector,
 			t.enforcers[constants.RemoteContainer],
 			t.rpchdl,
+			t.config.ipv6,
 		)
 		if err != nil {
 			zap.L().Error("Unable to create proxy Supervisor:: Returned Error ", zap.Error(err))
@@ -229,6 +239,7 @@ func (t *trireme) newSupervisors() error {
 			constants.Sidecar,
 			t.config.targetNetworks,
 			t.config.service,
+			t.config.ipv6,
 		)
 		if err != nil {
 			return fmt.Errorf("Could Not create process sidecar supervisor :: received error %v", err)

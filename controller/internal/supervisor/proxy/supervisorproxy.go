@@ -30,7 +30,7 @@ type ProxyInfo struct {
 	prochdl        processmon.ProcessManager
 	rpchdl         rpcwrapper.RPCClient
 	initDone       map[string]bool
-
+	ipv6           bool
 	sync.Mutex
 }
 
@@ -111,7 +111,7 @@ func (s *ProxyInfo) Run(ctx context.Context) error {
 }
 
 // NewProxySupervisor creates a new IptablesSupervisor launcher
-func NewProxySupervisor(collector collector.EventCollector, enforcer enforcer.Enforcer, rpchdl rpcwrapper.RPCClient) (*ProxyInfo, error) {
+func NewProxySupervisor(collector collector.EventCollector, enforcer enforcer.Enforcer, rpchdl rpcwrapper.RPCClient, ipv6 bool) (*ProxyInfo, error) {
 
 	if collector == nil {
 		return nil, errors.New("collector cannot be nil")
@@ -129,6 +129,7 @@ func NewProxySupervisor(collector collector.EventCollector, enforcer enforcer.En
 		rpchdl:         rpchdl,
 		initDone:       make(map[string]bool),
 		ExcludedIPs:    []string{},
+		ipv6:           ipv6,
 	}
 
 	return s, nil
