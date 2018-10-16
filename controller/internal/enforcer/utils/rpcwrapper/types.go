@@ -47,6 +47,7 @@ type InitRequestPayload struct {
 	ExternalIPCacheTimeout time.Duration         `json:",omitempty"`
 	Secrets                secrets.PublicSecrets `json:",omitempty"`
 	TargetNetworks         []string              `json:",omitempty"`
+	IPv6                   bool                  `json:",omitempty"`
 }
 
 // UpdateSecretsPayload payload for the update secrets to remote enforcers

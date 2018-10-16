@@ -189,6 +189,7 @@ func New(
 	externalIPCacheTimeout time.Duration,
 	packetLogs bool,
 	targetNetworks []string,
+	ipv6 bool,
 ) (Enforcer, error) {
 
 	tokenAccessor, err := tokenaccessor.New(serverID, validity, secrets)

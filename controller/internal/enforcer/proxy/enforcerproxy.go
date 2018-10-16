@@ -45,6 +45,7 @@ type ProxyInfo struct {
 	portSetInstance        portset.PortSet
 	collector              collector.EventCollector
 	targetNetworks         []string
+	ipv6                   bool
 	sync.RWMutex
 }
 
@@ -63,6 +64,7 @@ func (s *ProxyInfo) InitRemoteEnforcer(contextID string) error {
 			PacketLogs:             s.PacketLogs,
 			Secrets:                s.Secrets.PublicSecrets(),
 			TargetNetworks:         s.targetNetworks,
+			IPv6:                   s.ipv6,
 		},
 	}
 
@@ -221,6 +223,7 @@ func NewProxyEnforcer(mutualAuth bool,
 	packetLogs bool,
 	targetNetworks []string,
 	runtimeError chan *policy.RuntimeError,
+	ipv6 bool,
 ) enforcer.Enforcer {
 
 	return newProxyEnforcer(
@@ -240,6 +243,7 @@ func NewProxyEnforcer(mutualAuth bool,
 		packetLogs,
 		targetNetworks,
 		runtimeError,
+		ipv6,
 	)
 }
 
@@ -260,6 +264,7 @@ func newProxyEnforcer(mutualAuth bool,
 	packetLogs bool,
 	targetNetworks []string,
 	runtimeError chan *policy.RuntimeError,
+	ipv6 bool,
 ) enforcer.Enforcer {
 
 	statsServersecret, err := crypto.GenerateRandomString(32)
@@ -292,6 +297,7 @@ func newProxyEnforcer(mutualAuth bool,
 		portSetInstance:        portSetInstance,
 		collector:              collector,
 		targetNetworks:         targetNetworks,
+		ipv6:                   ipv6,
 	}
 
 	return proxydata
@@ -330,6 +336,7 @@ func NewDefaultProxyEnforcer(serverID string,
 		defaultPacketLogs,
 		targetNetworks,
 		runtimeError,
+		false,
 	)
 }
 

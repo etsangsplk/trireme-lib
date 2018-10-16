@@ -51,7 +51,7 @@ type Config struct {
 	triremeNetworks []string
 	// service is an external packet service
 	service packetprocessor.PacketProcessor
-
+	ipv6    bool
 	sync.Mutex
 }
 
@@ -59,7 +59,7 @@ type Config struct {
 // to redirect specific packets to userspace. It instantiates multiple data stores
 // to maintain efficient mappings between contextID, policy and IP addresses. This
 // simplifies the lookup operations at the expense of memory.
-func NewSupervisor(collector collector.EventCollector, enforcerInstance enforcer.Enforcer, mode constants.ModeType, networks []string, p packetprocessor.PacketProcessor) (*Config, error) {
+func NewSupervisor(collector collector.EventCollector, enforcerInstance enforcer.Enforcer, mode constants.ModeType, networks []string, p packetprocessor.PacketProcessor, ipv6 bool) (*Config, error) {
 
 	if collector == nil || enforcerInstance == nil {
 		return nil, errors.New("Invalid parameters")
@@ -94,6 +94,7 @@ func NewSupervisor(collector collector.EventCollector, enforcerInstance enforcer
 		triremeNetworks: networks,
 		portSetInstance: portSetInstance,
 		service:         p,
+		ipv6:            ipv6,
 	}, nil
 }
 

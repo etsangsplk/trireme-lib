@@ -100,7 +100,7 @@ func (s *RemoteEnforcer) setupEnforcer(req rpcwrapper.Request) error {
 	if err != nil {
 		return err
 	}
-
+	s.ipv6 = payload.IPv6
 	if s.enforcer, err = enforcer.New(
 		payload.MutualAuth,
 		payload.FqConfig,
@@ -114,6 +114,7 @@ func (s *RemoteEnforcer) setupEnforcer(req rpcwrapper.Request) error {
 		payload.ExternalIPCacheTimeout,
 		payload.PacketLogs,
 		payload.TargetNetworks,
+		payload.IPv6,
 	); err != nil || s.enforcer == nil {
 		return fmt.Errorf("Error while initializing remote enforcer, %s", err)
 	}
@@ -218,6 +219,7 @@ func (s *RemoteEnforcer) InitSupervisor(req rpcwrapper.Request, resp *rpcwrapper
 			constants.RemoteContainer,
 			payload.TriremeNetworks,
 			s.service,
+			s.ipv6,
 		)
 		if err != nil {
 			zap.L().Error("unable to instantiate the iptables supervisor", zap.Error(err))

@@ -31,4 +31,5 @@ type RemoteEnforcer struct {
 	secrets        secrets.Secrets
 	ctx            context.Context
 	cancel         context.CancelFunc
+	ipv6           bool
 }
