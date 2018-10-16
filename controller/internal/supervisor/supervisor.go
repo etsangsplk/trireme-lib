@@ -75,7 +75,7 @@ func NewSupervisor(collector collector.EventCollector, enforcerInstance enforcer
 		return nil, errors.New("portSetInstance cannot be nil")
 	}
 
-	impl, err := iptablesctrl.NewInstance(filterQueue, mode, portSetInstance)
+	impl, err := iptablesctrl.NewInstance(filterQueue, mode, portSetInstance, ipv6)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize supervisor controllers: %s", err)
 	}

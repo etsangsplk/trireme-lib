@@ -59,27 +59,29 @@ type Instance struct {
 	appSynAckIPTableSection string
 	mode                    constants.ModeType
 	portSetInstance         portset.PortSet
+	ipv6                    bool
 }
 
 // NewInstance creates a new iptables controller instance
-func NewInstance(fqc *fqconfig.FilterQueue, mode constants.ModeType, portset portset.PortSet) (*Instance, error) {
-
+func NewInstance(fqc *fqconfig.FilterQueue, mode constants.ModeType, portset portset.PortSet, ipv6 bool) (*Instance, error) {
+	var ipt6 *provider.BatchProvider
+	var ips6 provider.IpsetProvider
 	ipt, err := provider.NewGoIPTablesProvider([]string{"mangle"})
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize iptables provider: %s", err)
 	}
-
-	ipt6, err := provider.NewGoIP6TablesProvider([]string{"mangle"})
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize iptables provider for ipv6 %s", err)
+	if ipv6 {
+		ipt6, err = provider.NewGoIP6TablesProvider([]string{"mangle"})
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize iptables provider for ipv6 %s", err)
+		}
+		ips6 = provider.NewGoIPsetProvider()
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize ipsets: %s", err)
+		}
 	}
 
 	ips := provider.NewGoIPsetProvider()
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize ipsets: %s", err)
-	}
-
-	ips6 := provider.NewGoIPsetProvider()
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize ipsets: %s", err)
 	}
